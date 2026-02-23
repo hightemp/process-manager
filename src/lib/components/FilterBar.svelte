@@ -1,4 +1,6 @@
 <script lang="ts">
+  // DEBUG: FilterBar icons replaced with lucide-svelte: Search, X, Play, Pause
+  import { Search, X, Play, Pause } from 'lucide-svelte';
   import { filterStore } from '$lib/stores/filterStore.svelte';
   import { settingsStore } from '$lib/stores/settingsStore.svelte';
   import { setPaused, setRefreshInterval } from '$lib/api/processes';
@@ -26,7 +28,7 @@
 <div class="filter-bar">
   <!-- Search -->
   <div class="search-wrap">
-    <span class="search-icon">🔍</span>
+    <Search size={16} class="search-icon" stroke-width={1.75} />
     <input
       bind:this={searchInputEl}
       class="search-input"
@@ -37,7 +39,7 @@
       spellcheck={false}
     />
     {#if filterStore.search}
-      <button class="clear-btn" onclick={() => { filterStore.search = ''; }}>✕</button>
+      <button class="clear-btn" onclick={() => { filterStore.search = ''; }} aria-label="Clear search"><X size={13} stroke-width={2} /></button>
     {/if}
   </div>
 
@@ -113,7 +115,11 @@
       onclick={togglePause}
       title={settingsStore.paused ? 'Resume auto-refresh (F5)' : 'Pause auto-refresh'}
     >
-      {settingsStore.paused ? '▶ Resume' : '⏸ Pause'}
+      {#if settingsStore.paused}
+        <Play size={13} stroke-width={2} /> Resume
+      {:else}
+        <Pause size={13} stroke-width={2} /> Pause
+      {/if}
     </button>
   </div>
 </div>
@@ -136,12 +142,13 @@
     flex: 0 0 260px;
   }
 
-  .search-icon {
+  :global(.search-icon) {
     position: absolute;
     left: 8px;
-    font-size: 0.75rem;
     pointer-events: none;
-    opacity: 0.6;
+    opacity: 0.55;
+    color: var(--text-muted);
+    display: flex;
   }
 
   .search-input {
@@ -168,7 +175,8 @@
     color: var(--text-muted);
     cursor: pointer;
     padding: 2px 4px;
-    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
   }
 
   .toggles {
@@ -251,6 +259,9 @@
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
 
   .pause-btn:hover {

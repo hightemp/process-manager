@@ -3,6 +3,8 @@
   import { filterStore } from '$lib/stores/filterStore.svelte';
   import { selectionStore } from '$lib/stores/processStore.svelte';
   import { settingsStore } from '$lib/stores/settingsStore.svelte';
+  // DEBUG: ProcessTable icons replaced: ChevronUp/Down, Lock, X, Skull
+  import { ChevronUp, ChevronDown, Lock, X, Skull } from 'lucide-svelte';
   import { formatBytes, formatCpu, truncatePath } from '$lib/utils/format';
 
   interface Props {
@@ -56,9 +58,8 @@
     filterStore.toggleSort(field);
   }
 
-  function sortIcon(field: SortField) {
-    if (filterStore.sortField !== field) return '';
-    return filterStore.sortDirection === 'asc' ? ' ▲' : ' ▼';
+  function isSorted(field: SortField) {
+    return filterStore.sortField === field;
   }
 
   // ────────────── Row actions ──────────────
@@ -114,7 +115,14 @@
         onkeydown={(e) => e.key === 'Enter' && handleSort(col.id as SortField)}
         tabindex="0"
       >
-        {col.label}{sortIcon(col.id as SortField)}
+        {col.label}
+        {#if isSorted(col.id as SortField)}
+          {#if filterStore.sortDirection === 'asc'}
+            <ChevronUp size={12} class="sort-icon" stroke-width={2} />
+          {:else}
+            <ChevronDown size={12} class="sort-icon" stroke-width={2} />
+          {/if}
+        {/if}
       </div>
     {/each}
     <!-- Actions column -->
@@ -144,7 +152,7 @@
                 <span class="proc-name-cell">
                   {proc.name}
                   {#if proc.needs_elevation}
-                    <span class="lock-icon" title="Needs elevated rights">🔒</span>
+                    <span class="lock-wrap" title="Needs elevated rights"><Lock size={12} class="lock-icon" stroke-width={2} /></span>
                   {/if}
                 </span>
               {:else}
@@ -158,12 +166,14 @@
               class="action-btn btn-term"
               title="Terminate (SIGTERM)"
               onclick={(e) => { e.stopPropagation(); onKillRequest(proc, 'terminate'); }}
-            >✕</button>
+              aria-label="Terminate"
+            ><X size={14} stroke-width={2} /></button>
             <button
               class="action-btn btn-kill"
               title="Force Kill (SIGKILL)"
               onclick={(e) => { e.stopPropagation(); onKillRequest(proc, 'kill'); }}
-            >☠</button>
+              aria-label="Force Kill"
+            ><Skull size={14} stroke-width={1.75} /></button>
           </div>
         </div>
       {/each}
@@ -201,6 +211,7 @@
     height: 100%;
     display: flex;
     align-items: center;
+    gap: 2px;
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-muted);
@@ -278,9 +289,21 @@
     overflow: hidden;
   }
 
-  .lock-icon {
-    font-size: 0.7rem;
+  :global(.lock-icon) {
     opacity: 0.7;
+    flex-shrink: 0;
+    color: var(--color-warning);
+  }
+
+  .lock-wrap {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  :global(.sort-icon) {
+    margin-left: 2px;
+    opacity: 0.8;
     flex-shrink: 0;
   }
 
@@ -293,6 +316,9 @@
     font-size: 0.85rem;
     opacity: 0;
     transition: opacity 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
   }
 
   .tr:hover .action-btn {

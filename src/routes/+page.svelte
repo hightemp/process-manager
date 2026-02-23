@@ -7,6 +7,8 @@
   import { listProcesses, onProcessesUpdate } from '$lib/api/processes';
   import { killProcess } from '$lib/api/actions';
 
+  // DEBUG: +page.svelte header icons replaced: Monitor, RefreshCw, Sun, Moon
+  import { Monitor, RefreshCw, Sun, Moon } from 'lucide-svelte';
   import FilterBar from '$lib/components/FilterBar.svelte';
   import ProcessTable from '$lib/components/ProcessTable.svelte';
   import DetailPanel from '$lib/components/DetailPanel.svelte';
@@ -216,13 +218,17 @@
   <!-- Top bar -->
   <header class="topbar">
     <div class="app-title">
-      <span class="app-icon">⚙</span>
+      <Monitor size={18} class="app-icon" stroke-width={1.75} />
       <span>Process Manager</span>
     </div>
     <div class="topbar-actions">
-      <button class="icon-btn" onclick={handleRefreshNow} title="Refresh now (F5)">↻</button>
-      <button class="icon-btn" onclick={toggleTheme} title="Toggle theme">
-        {settingsStore.theme === 'dark' ? '☀' : '🌙'}
+      <button class="icon-btn" onclick={handleRefreshNow} title="Refresh now (F5)" aria-label="Refresh"><RefreshCw size={15} stroke-width={2} /></button>
+      <button class="icon-btn" onclick={toggleTheme} title="Toggle theme" aria-label="Toggle theme">
+        {#if settingsStore.theme === 'dark'}
+          <Sun size={16} stroke-width={1.75} />
+        {:else}
+          <Moon size={16} stroke-width={1.75} />
+        {/if}
       </button>
     </div>
   </header>
@@ -297,9 +303,9 @@
     color: var(--text-primary);
   }
 
-  .app-icon {
-    font-size: 1rem;
+  :global(.app-icon) {
     opacity: 0.8;
+    color: var(--color-accent);
   }
 
   .topbar-actions {
@@ -312,9 +318,10 @@
     border: 1px solid transparent;
     color: var(--text-muted);
     cursor: pointer;
-    padding: 4px 8px;
+    padding: 5px 8px;
     border-radius: 4px;
-    font-size: 1rem;
+    display: flex;
+    align-items: center;
     transition: all 0.15s;
   }
 
