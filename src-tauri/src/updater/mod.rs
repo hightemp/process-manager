@@ -9,6 +9,11 @@ use tauri::{AppHandle, Emitter};
 use tokio::time;
 use tracing::{error, info};
 
+// [FIX] Use tauri::async_runtime::spawn instead of tokio::spawn.
+// tokio::spawn requires an active Tokio reactor, but Tauri's .setup() callback
+// runs before one is available. tauri::async_runtime::spawn dispatches onto
+// Tauri's own managed runtime, which is always ready during setup.
+
 use crate::{
     collector::SysinfoCollector,
     models::{ProcessDto, ProcessUpdateEvent},
@@ -21,7 +26,7 @@ pub const EVENT_PROCESS_GONE: &str = "process:gone";
 /// Starts the background refresh loop in a Tokio task.
 /// Interval is read from AppState on each tick to support live changes.
 pub fn start_updater(app_handle: AppHandle, state: Arc<Mutex<AppState>>) {
-    tokio::spawn(async move {
+    tauri::async_runtime::spawn(async move {
         let mut collector = SysinfoCollector::new();
 
         // Initial snapshot
