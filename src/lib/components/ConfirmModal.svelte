@@ -1,4 +1,6 @@
 <script lang="ts">
+  // DEBUG: ConfirmModal icons replaced: TriangleAlert
+  import { TriangleAlert } from 'lucide-svelte';
   import type { ProcessDto, KillMode } from '$lib/types';
 
   interface Props {
@@ -32,7 +34,11 @@
       onclick={(e) => e.stopPropagation()}
     >
       <h2 id="modal-title" class="modal-title">
-        {mode === 'kill' ? '⚠️ Force Kill Process' : 'Terminate Process'}
+        {#if mode === 'kill'}
+          <TriangleAlert size={18} class="modal-warn-icon" stroke-width={2} /> Force Kill Process
+        {:else}
+          Terminate Process
+        {/if}
       </h2>
 
       <div class="process-info">
@@ -52,7 +58,7 @@
         {/if}
         {#if process.needs_elevation}
           <div class="elevation-warning">
-            ⚠️ This process belongs to another user. You may need elevated privileges.
+            <TriangleAlert size={13} class="inline-warn" stroke-width={2} /> This process belongs to another user. You may need elevated privileges.
           </div>
         {/if}
       </div>
@@ -107,6 +113,19 @@
     margin: 0 0 16px;
     font-size: 1.1rem;
     color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  :global(.modal-warn-icon) {
+    color: var(--color-danger);
+    flex-shrink: 0;
+  }
+
+  :global(.inline-warn) {
+    color: var(--color-warning);
+    flex-shrink: 0;
   }
 
   .process-info {
@@ -140,6 +159,9 @@
     margin-top: 8px;
     color: var(--color-warning);
     font-size: 0.8rem;
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
   }
 
   .warning-text {

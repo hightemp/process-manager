@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { ProcessDto } from '$lib/types';
   import { formatBytes, formatCpu, formatTime, truncatePath } from '$lib/utils/format';
+  // DEBUG: DetailPanel icons replaced: X, Copy, FolderOpen, Lock
+  import { X, Copy, FolderOpen, Lock } from 'lucide-svelte';
   import { killProcess, openPath, copyToClipboard } from '$lib/api/actions';
 
   interface Props {
@@ -30,10 +32,10 @@
       <div class="title-row">
         <span class="proc-name">{process.name}</span>
         {#if process.needs_elevation}
-          <span class="badge-elevation" title="Requires elevated privileges">🔒 Needs rights</span>
+          <span class="badge-elevation" title="Requires elevated privileges"><Lock size={11} stroke-width={2} /> Needs rights</span>
         {/if}
       </div>
-      <button class="close-btn" onclick={onClose} aria-label="Close detail panel">✕</button>
+      <button class="close-btn" onclick={onClose} aria-label="Close detail panel"><X size={16} stroke-width={2} /></button>
     </div>
 
     <div class="panel-body">
@@ -102,10 +104,10 @@
       <!-- Actions -->
       <div class="section actions-section">
         <div class="action-group">
-          <button class="btn-sm btn-copy" onclick={handleCopyPid}>Copy PID</button>
+          <button class="btn-sm btn-copy" onclick={handleCopyPid}><Copy size={12} stroke-width={2} /> Copy PID</button>
           {#if process.path}
-            <button class="btn-sm btn-copy" onclick={handleCopyPath}>Copy Path</button>
-            <button class="btn-sm btn-open" onclick={handleOpenPath}>Open Location</button>
+            <button class="btn-sm btn-copy" onclick={handleCopyPath}><Copy size={12} stroke-width={2} /> Copy Path</button>
+            <button class="btn-sm btn-open" onclick={handleOpenPath}><FolderOpen size={12} stroke-width={2} /> Open Location</button>
           {/if}
         </div>
         <div class="action-group">
@@ -172,6 +174,9 @@
     border-radius: 3px;
     padding: 2px 5px;
     width: fit-content;
+    display: flex;
+    align-items: center;
+    gap: 3px;
   }
 
   .close-btn {
@@ -180,8 +185,9 @@
     color: var(--text-muted);
     cursor: pointer;
     padding: 2px 6px;
-    font-size: 0.9rem;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
   }
 
   .panel-body {
@@ -287,6 +293,9 @@
     font-size: 0.78rem;
     cursor: pointer;
     transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .btn-copy {

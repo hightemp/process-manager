@@ -1,4 +1,7 @@
 <script lang="ts">
+  // DEBUG: Toast dismiss icon replaced: X
+  import { X } from 'lucide-svelte';
+
   export interface Toast {
     id: number;
     message: string;
@@ -17,7 +20,7 @@
   {#each toasts as toast (toast.id)}
     <div class="toast toast-{toast.type}" role="alert">
       <span class="toast-msg">{toast.message}</span>
-      <button class="toast-close" onclick={() => onDismiss(toast.id)} aria-label="Dismiss">✕</button>
+      <button class="toast-close" onclick={() => onDismiss(toast.id)} aria-label="Dismiss"><X size={14} stroke-width={2} /></button>
     </div>
   {/each}
 </div>
@@ -64,7 +67,8 @@
     color: inherit;
     opacity: 0.6;
     padding: 0 2px;
-    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
   }
 
   .toast-close:hover { opacity: 1; }
