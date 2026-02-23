@@ -15,8 +15,38 @@ use collector::SysinfoCollector;
 use commands::*;
 use state::AppState;
 
+#[cfg(all(debug_assertions, target_os = "linux"))]
+fn ensure_localhost_no_proxy() {
+    const LOCAL_TARGETS: [&str; 3] = ["localhost", "127.0.0.1", "::1"];
+
+    fn merge_no_proxy_var(name: &str) {
+        let existing = std::env::var(name).unwrap_or_default();
+        let mut parts: Vec<String> = existing
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(ToString::to_string)
+            .collect();
+
+        for target in LOCAL_TARGETS {
+            if !parts.iter().any(|p| p.eq_ignore_ascii_case(target)) {
+                parts.push(target.to_string());
+            }
+        }
+
+        let merged = parts.join(",");
+        std::env::set_var(name, merged);
+    }
+
+    merge_no_proxy_var("NO_PROXY");
+    merge_no_proxy_var("no_proxy");
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(all(debug_assertions, target_os = "linux"))]
+    ensure_localhost_no_proxy();
+
     // Initialise structured logging
     tracing_subscriber::fmt()
         .with_env_filter(
