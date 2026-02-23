@@ -47,14 +47,22 @@
     let list = processStore.list;
 
     if (search) {
+      // [FIX] Only match on path when the search looks like a path
+      // (contains / or \). Otherwise, match only on name and PID to
+      // avoid flooding results with unrelated subprocesses that share
+      // the same executable binary (e.g. all Chromium threads).
+      const matchPath = search.includes('/') || search.includes('\\');
       list = list.filter((p) =>
         p.name.toLowerCase().includes(search) ||
         p.pid.toString().includes(search) ||
-        (p.path?.toLowerCase().includes(search) ?? false)
+        (matchPath && (p.path?.toLowerCase().includes(search) ?? false))
       );
+      console.debug('[FIX] search filter applied', { search, matchPath, resultCount: list.length });
     }
     if (filter.mine_only) {
-      list = list.filter((p) => !p.needs_elevation);
+      // [FIX] Check that user is known AND belongs to current user
+      // (needs_elevation=false means same user, but user must not be null)
+      list = list.filter((p) => p.user !== null && !p.needs_elevation);
     }
     if (filter.system_only) {
       list = list.filter((p) => p.pid < 500 || p.user === 'root' || p.user === 'SYSTEM');
@@ -63,10 +71,12 @@
       list = list.filter((p) => !(p.pid < 500 || p.user === 'root' || p.user === 'SYSTEM'));
     }
     if (filter.cpu_gt !== undefined) {
-      list = list.filter((p) => p.cpu_percent >= filter.cpu_gt!);
+      // [FIX] Use strict > to match the UI label "CPU >"
+      list = list.filter((p) => p.cpu_percent > filter.cpu_gt!);
     }
     if (filter.memory_gt_bytes !== undefined) {
-      list = list.filter((p) => p.memory_bytes >= filter.memory_gt_bytes!);
+      // [FIX] Use strict > to match the UI label "RAM >"
+      list = list.filter((p) => p.memory_bytes > filter.memory_gt_bytes!);
     }
 
     // Sort

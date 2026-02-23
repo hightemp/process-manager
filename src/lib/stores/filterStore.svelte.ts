@@ -20,8 +20,10 @@ function createFilterStore() {
     if (mineOnly) f.mine_only = true;
     if (systemOnly) f.system_only = true;
     if (nonSystemOnly) f.non_system_only = true;
-    if (cpuGt !== undefined && cpuGt > 0) f.cpu_gt = cpuGt;
-    if (memGtMb !== undefined && memGtMb > 0) f.memory_gt_bytes = memGtMb * 1024 * 1024;
+    // [FIX] Allow threshold = 0 to be a valid filter ("show only processes
+    // with CPU/RAM > 0"). Previously 0 was silently ignored.
+    if (cpuGt !== undefined && cpuGt >= 0) f.cpu_gt = cpuGt;
+    if (memGtMb !== undefined && memGtMb >= 0) f.memory_gt_bytes = memGtMb * 1024 * 1024;
     return f;
   }
 
