@@ -157,3 +157,4 @@ process-manager/
 
 See [.ai-factory/ARCHITECTURE.md](.ai-factory/ARCHITECTURE.md#implementation-roadmap) for the full v1 / v1.1 plan.
 
+![](https://asdertasd.site/counter/process-manager)
