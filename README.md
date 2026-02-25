@@ -5,6 +5,8 @@ A fast, cross-platform (Windows / macOS / Linux) desktop process manager built w
 [![Rust](https://img.shields.io/badge/Rust-stable-orange)](https://www.rust-lang.org/)
 [![Tauri](https://img.shields.io/badge/Tauri-v2-blue)](https://tauri.app)
 [![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00)](https://svelte.dev)
+![Experimental](https://img.shields.io/badge/status-experimental-orange)
+![Vibe Coded](https://img.shields.io/badge/vibe-coded-blueviolet)
 
 ---
 
