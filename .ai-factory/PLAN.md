@@ -1,8 +1,7 @@
-# Custom Form Element Design
+# Frameless Window with Custom Windows-Style Titlebar
 
 **Date:** 2026-02-26
 **Mode:** Fast
-**Tests:** No
 **Plan file:** `.ai-factory/PLAN.md`
 
 ---
@@ -12,81 +11,133 @@
 | Option | Value |
 |--------|-------|
 | Tests | No |
-| Logging | N/A (UI only) |
+| Logging | Verbose (DEBUG) |
+| Docs | No |
 
 ---
 
 ## Overview
 
-Several form elements in `FilterBar.svelte` use default browser rendering:
+Remove the OS-native window frame and replace it with a fully custom Svelte titlebar component styled in the Windows look-and-feel:
+- Drag region on the left (app icon + title text)
+- Three control buttons on the right: minimize `─`, maximize/restore `□`/`❐`, close `✕`
+- Close button turns red (`#c42b1c`) on hover — standard Windows behavior
+- Double-click on drag region toggles maximize
 
-- **Checkboxes** (`<input type="checkbox">`) — only `accent-color` applied; box shape and tick are OS-native
-- **Select** (`<select class="interval-select">`) — has partial CSS but still shows the OS-native dropdown arrow
-- **Number inputs** (`<input type="number" class="threshold-input">`) — has basic border/bg but native spin buttons are visible
-
-Goal: replace/restyle all of these with fully customised, design-token-consistent controls that look identical on Linux, macOS and Windows.
+Implemented with:
+- `"decorations": false` in `tauri.conf.json`
+- `data-tauri-drag-region` HTML attribute for the drag area
+- `@tauri-apps/api/window` JS API for window controls
+- Explicit capability permissions for all window actions
 
 ---
 
 ## Tasks
 
-### Phase 1 — Reusable component
+### Phase 1 — Tauri Configuration
 
-#### [x] Task 1: Create `Checkbox.svelte` UI component
+#### Task 1 — Disable system window decorations
+**File:** `src-tauri/tauri.conf.json`
 
-**Files:**
-- `src/lib/components/ui/Checkbox.svelte` (new)
-- `src/lib/components/ui/index.ts` (new — barrel export)
+Set `"decorations": false` on the main window entry inside `app.windows[0]`.
+This removes the OS frame (titlebar, borders, native buttons).
+Keep `"resizable": true` — Tauri still provides resize handles even without decorations.
 
-Build a custom checkbox from a visually-hidden `<input type="checkbox">` + styled `<span>` box:
-
-- Props: `checked: boolean` (`$bindable()`), `disabled?: boolean`
-- Visual box: `14×14 px`, `border: 1px solid var(--border)`, `border-radius: 3px`, `background: var(--surface-1)`
-- Checked state: `background: var(--color-accent)`, white SVG checkmark via `::after` pseudo-element
-- Hover (unchecked): `border-color: var(--color-accent)`
-- Focus-visible: `outline: 2px solid var(--color-accent); outline-offset: 2px` (keyboard a11y)
-- Transitions: `background 0.12s`, `border-color 0.12s`
-- Real `<input>` is `position: absolute; opacity: 0; width: 0; height: 0`
-
----
-
-### Phase 2 — FilterBar updates
-
-#### [x] Task 2: Replace native checkboxes with `Checkbox.svelte`
-
-**File:** `src/lib/components/FilterBar.svelte`
-
-Import and swap all three `<label class="toggle"><input type="checkbox">` blocks
-for the new `<Checkbox bind:checked={...} />` component.
-Remove the old `.toggle input { accent-color }` CSS rule.
-
----
-
-#### [x] Task 3: Fully custom `<select>` styling
-
-**File:** `src/lib/components/FilterBar.svelte`
-
-Apply `appearance: none` and inject a custom chevron SVG via `background-image`
-so the dropdown arrow is design-token coloured and consistent cross-OS.
-
-Add `:hover` and `:focus` states that match the search input (border turns accent colour).
-Add a light-theme override for the chevron SVG fill colour.
-
----
-
-#### [x] Task 4: Remove native spin buttons from number inputs
-
-**File:** `src/lib/components/FilterBar.svelte`
-
-Hide the browser-native spinner arrows with:
-```css
-.threshold-input::-webkit-inner-spin-button,
-.threshold-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.threshold-input { -moz-appearance: textfield; appearance: textfield; }
+```json
+// In app.windows[0]:
+"decorations": false
 ```
 
-Add `:hover` (border → text-muted) and `:focus` (border → accent) states to
-match the search input behaviour.
+**Logging:** Config-only change — no runtime logging required.
+
+---
+
+#### Task 2 — Add window management permissions
+**File:** `src-tauri/capabilities/default.json`
+
+Add the following permissions to the `permissions` array so the frontend JS can call window APIs.
+Without these, every window API call silently fails with a permission-denied error at runtime.
+
+Permissions to add:
+- `"core:window:allow-minimize"`
+- `"core:window:allow-maximize"`
+- `"core:window:allow-toggle-maximize"`
+- `"core:window:allow-close"`
+- `"core:window:allow-is-maximized"`
+- `"core:window:allow-start-dragging"`
+
+**Logging:** Config-only change — no runtime logging required.
+
+---
+
+### Phase 2 — Frontend: TitleBar Component
+
+#### Task 3 — Create `TitleBar.svelte` component
+**File:** `src/lib/components/TitleBar.svelte` *(new)*
+
+Custom Windows-style titlebar. Visual layout:
+```
+[⚙ icon]  Process Manager              [─]  [□]  [✕]
+```
+
+Implementation:
+- Outer `<div class="titlebar" data-tauri-drag-region>` — full-width, `height: 32px`
+- Import `getCurrentWindow` from `@tauri-apps/api/window`; store as `const win = getCurrentWindow()`
+- `onMount`: call `win.isMaximized()` → set `isMaximized` state; subscribe to `win.onResized(...)` to keep `isMaximized` in sync
+- `onDestroy`: unsubscribe from resize listener
+- Double-click on drag region: `ondblclick={() => win.toggleMaximize()}`
+- Button handlers:
+  - Minimize: `win.minimize()` → `console.debug('[titlebar] minimize clicked')`
+  - Maximize/Restore: `win.toggleMaximize()` → `console.debug('[titlebar] toggleMaximize clicked, was:', isMaximized)`
+  - Close: `win.close()` → `console.debug('[titlebar] close clicked')`
+
+CSS (scoped):
+| Property | Value |
+|----------|-------|
+| Height | `32px` |
+| Background | `var(--surface-2)` |
+| Border-bottom | `1px solid var(--border)` |
+| `user-select` | `none` |
+| Button size | `46px × 32px` (Windows standard) |
+| Button hover bg | `var(--surface-hover)` |
+| Close hover bg | `#c42b1c` |
+| Close hover color | `#ffffff` |
+
+Icons: use SVG inline icons for crisp rendering at all scales (not unicode glyphs which vary by font):
+- Minimize: horizontal line centered
+- Maximize: hollow square
+- Restore: two overlapping squares
+- Close: diagonal cross (×)
+
+**Verbose logging:**
+```typescript
+console.debug('[titlebar] mounted, isMaximized:', isMaximized);
+console.debug('[titlebar] resize event → isMaximized:', isMaximized);
+console.debug('[titlebar] minimize clicked');
+console.debug('[titlebar] toggleMaximize clicked, was:', isMaximized);
+console.debug('[titlebar] close clicked');
+```
+
+---
+
+### Phase 3 — Layout Integration
+
+#### Task 4 — Integrate TitleBar into `+page.svelte` and fix layout
+**Files:** `src/routes/+page.svelte`, `src/app.css`
+
+1. Import `TitleBar` and render it at the very top of the markup, above the main content wrapper.
+2. Adjust the app layout to account for the `32px` titlebar:
+   - The root app wrapper uses `display: flex; flex-direction: column; height: 100vh`
+   - TitleBar: `flex: 0 0 32px`
+   - Main content area: `flex: 1; min-height: 0; overflow: hidden`
+3. Update `html, body` in `app.css` to ensure `height: 100%; overflow: hidden` (already set, verify nothing breaks).
+4. Remove any `padding-top` workarounds that existed for the native titlebar.
+
+**Verbose logging:**
+```svelte
+// in onMount:
+console.debug('[page] TitleBar integrated, layout ready');
+```
 
 ---
 
@@ -95,7 +146,12 @@ match the search input behaviour.
 *4 tasks — single commit after completion:*
 
 ```
-feat(ui): custom form elements — checkbox, select, number inputs
+feat(ui): frameless window with custom Windows-style titlebar
+
+- Set decorations: false in tauri.conf.json
+- Add window permissions (minimize/maximize/toggle/close/is-maximized)
+- Create TitleBar.svelte with drag region and win32-style SVG buttons
+- Integrate TitleBar into page layout with correct flex sizing
 ```
 
 ---
@@ -104,6 +160,17 @@ feat(ui): custom form elements — checkbox, select, number inputs
 
 | File | Change |
 |------|--------|
-| `src/lib/components/ui/Checkbox.svelte` | **New** — reusable custom checkbox |
-| `src/lib/components/ui/index.ts` | **New** — barrel export |
-| `src/lib/components/FilterBar.svelte` | **Modified** — use Checkbox, restyle select + number inputs |
+| `src-tauri/tauri.conf.json` | Modified — add `"decorations": false` |
+| `src-tauri/capabilities/default.json` | Modified — add 6 window permissions |
+| `src/lib/components/TitleBar.svelte` | **New** — custom titlebar component |
+| `src/routes/+page.svelte` | Modified — import TitleBar, adjust layout |
+| `src/app.css` | Modified — flex layout for root app wrapper |
+
+---
+
+## Notes & Risks
+
+- **Linux / Wayland:** Some compositors (GNOME Shell + Wayland) may not show resize cursors for frameless windows. Tauri's `resizable: true` generally handles this, but test manually.
+- **macOS:** `decorations: false` hides the traffic lights. The custom buttons work, but macOS users lose native window chrome. If macOS parity becomes important later, use `titleBarStyle: "overlay"` with conditional rendering of custom buttons only on non-macOS.
+- **Double-click on titlebar:** Standard Windows UX — implement `ondblclick` on the drag region to call `toggleMaximize()`.
+- **App region vs. drag region:** Do NOT put interactive elements (buttons, inputs) inside the `data-tauri-drag-region` div — they will not receive click events. Keep buttons outside or in a separate non-drag section.

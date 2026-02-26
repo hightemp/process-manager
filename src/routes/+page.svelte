@@ -7,8 +7,8 @@
   import { listProcesses, onProcessesUpdate } from '$lib/api/processes';
   import { killProcess } from '$lib/api/actions';
 
-  // DEBUG: +page.svelte header icons replaced: Monitor, RefreshCw, Sun, Moon
-  import { Monitor, RefreshCw, Sun, Moon } from 'lucide-svelte';
+  import { RefreshCw, Sun, Moon } from 'lucide-svelte';
+  import TitleBar from '$lib/components/TitleBar.svelte';
   import FilterBar from '$lib/components/FilterBar.svelte';
   import ProcessTable from '$lib/components/ProcessTable.svelte';
   import DetailPanel from '$lib/components/DetailPanel.svelte';
@@ -109,6 +109,7 @@
   let unlisten: (() => void) | undefined;
 
   onMount(async () => {
+    console.debug('[page] TitleBar integrated, layout ready');
     document.documentElement.setAttribute('data-theme', settingsStore.theme);
 
     // Initial load
@@ -215,12 +216,11 @@
 <svelte:window onkeydown={handleGlobalKeydown} />
 
 <div class="app">
-  <!-- Top bar -->
+  <!-- Custom window titlebar (replaces OS decorations) -->
+  <TitleBar />
+
+  <!-- App toolbar -->
   <header class="topbar">
-    <div class="app-title">
-      <Monitor size={18} class="app-icon" stroke-width={1.75} />
-      <span>Process Manager</span>
-    </div>
     <div class="topbar-actions">
       <button class="icon-btn" onclick={handleRefreshNow} title="Refresh now (F5)" aria-label="Refresh"><RefreshCw size={15} stroke-width={2} /></button>
       <button class="icon-btn" onclick={toggleTheme} title="Toggle theme" aria-label="Toggle theme">
@@ -286,26 +286,12 @@
   .topbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 12px;
-    height: 40px;
+    justify-content: flex-end;
+    padding: 0 8px;
+    height: 36px;
     background: var(--surface-2);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
-  }
-
-  .app-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--text-primary);
-  }
-
-  :global(.app-icon) {
-    opacity: 0.8;
-    color: var(--color-accent);
   }
 
   .topbar-actions {
