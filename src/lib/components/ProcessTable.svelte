@@ -6,6 +6,7 @@
   // DEBUG: ProcessTable icons replaced: ChevronUp/Down, Lock, X, Skull
   import { ChevronUp, ChevronDown, Lock, X, Skull } from 'lucide-svelte';
   import { formatBytes, formatCpu, truncatePath } from '$lib/utils/format';
+  import { colSortField } from '$lib/utils/sort';
 
   interface Props {
     processes: ProcessDto[];
@@ -54,12 +55,14 @@
   // ────────────── Column handling ──────────────
   let visibleCols = $derived(settingsStore.visibleColumns());
 
-  function handleSort(field: SortField) {
-    filterStore.toggleSort(field);
+  function handleSort(colId: string) {
+    const field = colSortField(colId);
+    if (field) filterStore.toggleSort(field);
   }
 
-  function isSorted(field: SortField) {
-    return filterStore.sortField === field;
+  function isSorted(colId: string) {
+    const field = colSortField(colId);
+    return field !== null && filterStore.sortField === field;
   }
 
   // ────────────── Row actions ──────────────
@@ -110,13 +113,13 @@
         class="th {col.id}"
         style="width: {col.width}"
         role="columnheader"
-        aria-sort={filterStore.sortField === col.id ? (filterStore.sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-        onclick={() => handleSort(col.id as SortField)}
-        onkeydown={(e) => e.key === 'Enter' && handleSort(col.id as SortField)}
+        aria-sort={isSorted(col.id) ? (filterStore.sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+        onclick={() => handleSort(col.id)}
+        onkeydown={(e) => e.key === 'Enter' && handleSort(col.id)}
         tabindex="0"
       >
         {col.label}
-        {#if isSorted(col.id as SortField)}
+        {#if isSorted(col.id)}
           {#if filterStore.sortDirection === 'asc'}
             <ChevronUp size={12} class="sort-icon" stroke-width={2} />
           {:else}
