@@ -4,6 +4,7 @@
   import { filterStore } from '$lib/stores/filterStore.svelte';
   import { settingsStore } from '$lib/stores/settingsStore.svelte';
   import { setPaused, setRefreshInterval } from '$lib/api/processes';
+  import { Checkbox } from '$lib/components/ui';
 
   interface Props {
     totalCount: number;
@@ -46,15 +47,15 @@
   <!-- Filter toggles -->
   <div class="toggles">
     <label class="toggle" title="Show only my processes">
-      <input type="checkbox" bind:checked={filterStore.mineOnly} />
+      <Checkbox bind:checked={filterStore.mineOnly} />
       Mine only
     </label>
     <label class="toggle" title="Show only system processes (PID < 500 or root user)">
-      <input type="checkbox" bind:checked={filterStore.systemOnly} />
+      <Checkbox bind:checked={filterStore.systemOnly} />
       System
     </label>
     <label class="toggle" title="Hide system processes">
-      <input type="checkbox" bind:checked={filterStore.nonSystemOnly} />
+      <Checkbox bind:checked={filterStore.nonSystemOnly} />
       Non-system
     </label>
   </div>
@@ -195,10 +196,6 @@
     white-space: nowrap;
   }
 
-  .toggle input {
-    accent-color: var(--color-accent);
-  }
-
   .thresholds {
     display: flex;
     gap: 8px;
@@ -222,6 +219,25 @@
     color: var(--text-primary);
     font-size: 0.8rem;
     text-align: right;
+    outline: none;
+    transition: border-color 0.15s;
+    /* Remove native spinner arrows */
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .threshold-input::-webkit-inner-spin-button,
+  .threshold-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .threshold-input:hover {
+    border-color: var(--text-muted);
+  }
+
+  .threshold-input:focus {
+    border-color: var(--color-accent);
   }
 
   .spacer {
@@ -241,12 +257,34 @@
   }
 
   .interval-select {
-    padding: 4px 6px;
-    background: var(--surface-1);
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 4px 22px 4px 8px;
+    background-color: var(--surface-1);
+    /* Dark theme chevron: --text-muted #636d76 */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23636d76' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
     border: 1px solid var(--border);
     border-radius: 4px;
     color: var(--text-primary);
     font-size: 0.8rem;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .interval-select:hover {
+    border-color: var(--color-accent);
+  }
+
+  .interval-select:focus {
+    border-color: var(--color-accent);
+  }
+
+  /* Light theme: use --text-muted #9198a1 for chevron */
+  :global(:root[data-theme="light"]) .interval-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239198a1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   }
 
   .pause-btn {

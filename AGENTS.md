@@ -50,7 +50,8 @@ process-manager/
 │   │   │   ├── FilterBar/    # Search + filter controls
 │   │   │   ├── DetailPanel/  # Selected process details
 │   │   │   ├── ConfirmModal/ # Kill/terminate confirmation
-│   │   │   └── Sparkline/    # Mini CPU/RAM chart
+│   │   │   ├── Sparkline/    # Mini CPU/RAM chart
+│   │   │   └── ui/           # Reusable low-level UI primitives (Checkbox, …)
 │   │   ├── stores/           # Svelte stores (process list, filters, settings)
 │   │   └── utils/            # Formatting helpers, keyboard shortcuts
 │   └── routes/
