@@ -155,6 +155,40 @@ process-manager/
 
 ---
 
+## Releases
+
+Pre-built binaries for all supported platforms are attached to each [GitHub Release](../../releases).
+
+### Supported platforms
+
+| Platform | Architecture | Installer formats |
+|----------|-------------|-------------------|
+| Linux | x86_64 | `.deb`, `.rpm`, `.AppImage` |
+| Linux | aarch64 | `.deb`, `.rpm`, `.AppImage` |
+| Windows | x86_64 | `.msi`, `.exe` (NSIS) |
+| Windows | aarch64 | `.msi`, `.exe` (NSIS) |
+| macOS | Apple Silicon (aarch64) | `.dmg`, `.app` |
+
+> **macOS Intel (x86_64) is not supported.** The `macos-13` GitHub Actions runner
+> (the last Intel runner) is EOL and is no longer available.
+
+### Creating a new release
+
+```bash
+# Tag the commit you want to release
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The [release workflow](.github/workflows/release.yml) triggers automatically,
+builds all platform bundles in parallel, and creates a **draft** GitHub Release
+with the compiled installers attached as assets.
+
+Once all platform jobs finish, open the draft release on GitHub, review the
+assets, edit the release notes if needed, and click **Publish release**.
+
+---
+
 ## Roadmap
 
 See [.ai-factory/ARCHITECTURE.md](.ai-factory/ARCHITECTURE.md#implementation-roadmap) for the full v1 / v1.1 plan.

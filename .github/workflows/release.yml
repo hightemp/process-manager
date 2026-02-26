@@ -1,0 +1,120 @@
+name: Release
+
+# Triggered by a version tag push (e.g. git push origin v0.1.0)
+# or manually from the GitHub Actions UI.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+# Required to create a GitHub Release and upload built assets.
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # Don't cancel an in-flight release
+
+jobs:
+  release:
+    name: Release (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false  # One platform failure must not cancel the others
+      matrix:
+        include:
+          # ── Linux x86_64 — native build ──────────────────────────────────
+          - platform: linux-x86_64
+            os: ubuntu-latest
+            # rust_target: standard host triple on ubuntu-latest (x86_64)
+            rust_target: x86_64-unknown-linux-gnu
+            args: "--target x86_64-unknown-linux-gnu"
+
+          # ── Linux aarch64 — GitHub-hosted ARM64 runner ───────────────────
+          - platform: linux-aarch64
+            os: ubuntu-24.04-arm
+            rust_target: aarch64-unknown-linux-gnu
+            args: "--target aarch64-unknown-linux-gnu"
+
+          # ── Windows x86_64 — native build ────────────────────────────────
+          - platform: windows-x86_64
+            os: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+            args: "--target x86_64-pc-windows-msvc"
+
+          # ── Windows aarch64 — cross-compiled on x86_64 runner ────────────
+          # tauri-action supports cross-compilation to aarch64-pc-windows-msvc
+          # from a windows-latest (x86_64) host via MSVC cross toolchain.
+          # The NSIS/WiX installer bundles WebView2 so no runtime deps needed.
+          - platform: windows-aarch64
+            os: windows-latest
+            rust_target: aarch64-pc-windows-msvc
+            args: "--target aarch64-pc-windows-msvc"
+
+          # ── macOS Apple Silicon — native M-series runner ─────────────────
+          # macOS Intel (x86_64) intentionally excluded: macos-13 is EOL
+          # and the x86_64 runner is no longer supported.
+          - platform: macos-aarch64
+            os: macos-14
+            rust_target: aarch64-apple-darwin
+            args: "--target aarch64-apple-darwin"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Linux system dependencies ─────────────────────────────────────────
+      # Tauri on Linux requires WebKit2GTK (rendering engine), GTK3 (window
+      # management), and AppIndicator (system tray). librsvg2 and patchelf
+      # are needed for icon rendering and binary patching in AppImage bundles.
+      - name: Install Linux system dependencies
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      # Pre-install the correct Rust target toolchain for the matrix entry.
+      # For cross-compilation (e.g. Windows aarch64 on x86_64 host), rustup
+      # adds the cross-target sysroot so Cargo can link against it.
+      - name: Install Rust stable + target toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          # Include the target triple in the cache key so each platform gets
+          # its own isolated cache and cross-compilation artifacts don't mix.
+          key: ${{ matrix.rust_target }}
+
+      # Build the Tauri app and publish a draft GitHub Release with assets.
+      # releaseDraft: true — the release is created as a draft so the
+      # maintainer can review all platform assets before making it public.
+      - name: Build and publish release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Process Manager ${{ github.ref_name }}"
+          releaseBody: "See the assets below to download and install Process Manager."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
